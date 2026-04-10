@@ -209,6 +209,20 @@ jobs:
           fi
           echo "OK: Brak podmontowania gniazda Docker w docker-compose.yml"
 
+      - name: Check .env not committed to repository
+        run: |
+          echo "--- Sprawdzam czy plik .env nie jest w repozytorium ---"
+          app="${{ steps.find-app.outputs.app }}"
+
+          # git ls-files shows files tracked by git — .env must NOT appear
+          if git ls-files --error-unmatch "${app}/.env" > /dev/null 2>&1; then
+            echo "::error::Plik .env jest zacommitowany do repozytorium!"
+            echo "::error::Plik .env zawiera hasła i sekrety — NIE powinien trafiać do git."
+            echo "::error::Dodaj '.env' do pliku .gitignore i usuń go z historii: git rm --cached ${app}/.env"
+            exit 1
+          fi
+          echo "OK: Plik .env nie jest śledzony przez git"
+
       - name: Check report exists
         run: |
           app="${{ steps.find-app.outputs.app }}"

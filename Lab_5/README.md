@@ -121,7 +121,7 @@ docker compose down
 
 ### 5 Identyfikacja i naprawa problemów bezpieczeństwa
 
-Przejrzyj pliki `backend/Dockerfile`, `frontend/Dockerfile` oraz `docker-compose.yml` w poszukiwaniu 6 problemów bezpieczeństwa. Możesz skorzystać z LLM (np. Claude) — wklej zawartość plików z prośbą o security review.
+Przejrzyj pliki `backend/Dockerfile`, `frontend/Dockerfile` oraz `docker-compose.yml` w poszukiwaniu 4 problemów bezpieczeństwa. Możesz skorzystać z LLM (np. Claude) — wklej zawartość plików z prośbą o security review.
 
 Każdy z poniższych problemów musi zostać znaleziony i naprawiony:
 
@@ -181,30 +181,6 @@ Naprawa: utwórz dedykowanego użytkownika systemowego i przełącz na niego prz
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 USER appuser
 ```
-
----
-
-**BŁĄD 5 — Nadmierne uprawnienia do plików (`chmod 777`)**
-
-Uprawnienia `777` oznaczają, że każdy użytkownik w systemie (lub w kontenerze) może czytać, zapisywać i wykonywać pliki w katalogu `/app`. W przypadku kompromitacji jednego procesu, atakujący może modyfikować pliki aplikacji.
-
-Symptom do znalezienia: `RUN chmod 777 /app` w `backend/Dockerfile`
-
-Naprawa: użyj restrykcyjnych uprawnień odpowiednich dla aplikacji:
-```dockerfile
-RUN chmod 755 /app
-```
-Lub — jeszcze lepiej — usuń linię `chmod` całkowicie i zadbaj o właściwe uprawnienia przez właściciela pliku (appuser).
-
----
-
-**BŁĄD 6 — Podmontowanie gniazda Docker (`/var/run/docker.sock`)**
-
-Gniazdo Docker daje dostęp do demona Docker na hoście. Kontener z podmontowanym `/var/run/docker.sock` może tworzyć, uruchamiać i usuwać inne kontenery na hoście — jest to równoznaczne z uprawnieniami roota na maszynie hosta. Jest to jedna z najpoważniejszych luk bezpieczeństwa w konfiguracji Docker.
-
-Symptom do znalezienia: `- /var/run/docker.sock:/var/run/docker.sock` w wolumenach serwisu `db` w `docker-compose.yml`
-
-Naprawa: usuń tę linię całkowicie. Żaden serwis aplikacyjny nie powinien mieć dostępu do gniazda Docker, chyba że jest to narzędzie do zarządzania kontenerami (np. Portainer, CI/CD agent).
 
 ---
 
@@ -274,7 +250,7 @@ Oczekiwana odpowiedź po restarcie: lista zawierająca wcześniej dodany element
 - 7.2 Ma być ono zapisane za pomocą Markdown w nowo stworzonym folderze `app_nrIndeksu/`.
 
 - 7.3 Sprawozdanie musi zawierać:
-  - Opis każdego z 6 znalezionych problemów bezpieczeństwa (przed/po naprawie)
+  - Opis każdego z 4 znalezionych problemów bezpieczeństwa (przed/po naprawie)
   - Wyjaśnienie zagrożenia — co konkretnie może pójść źle, gdyby błąd pozostał
   - Odpowiedź LLM lub własną analizę wskazującą problem
   - Wyniki komendy `docker history` przed i po naprawie (BŁĄD 2)

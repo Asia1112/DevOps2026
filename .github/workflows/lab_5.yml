@@ -178,37 +178,6 @@ jobs:
 
           echo "OK: backend Dockerfile ma dyrektywę USER ($user_val) — kontener nie działa jako root"
 
-      - name: Check fix 5 - no chmod 777 in Dockerfiles
-        run: |
-          echo "--- Sprawdzam BLAD 5: nadmierne uprawnienia chmod 777 ---"
-          backend_df="${{ steps.find-app.outputs.app }}/backend/Dockerfile"
-          frontend_df="${{ steps.find-app.outputs.app }}/frontend/Dockerfile"
-          failed=0
-
-          if grep -qE "chmod\s+777" "$backend_df"; then
-            echo "::error::BLAD 5 nie naprawiony: backend/Dockerfile zawiera 'chmod 777' — użyj restrykcyjnych uprawnień (np. 755)"
-            failed=1
-          fi
-
-          if grep -qE "chmod\s+777" "$frontend_df"; then
-            echo "::error::BLAD 5 nie naprawiony: frontend/Dockerfile zawiera 'chmod 777'"
-            failed=1
-          fi
-
-          [ $failed -eq 0 ] && echo "OK: Brak chmod 777 w Dockerfiles"
-          [ $failed -ne 0 ] && exit 1
-
-      - name: Check fix 6 - no Docker socket mount
-        run: |
-          echo "--- Sprawdzam BLAD 6: podmontowanie gniazda Docker ---"
-          compose="${{ steps.find-app.outputs.app }}/docker-compose.yml"
-
-          if grep -q "docker.sock" "$compose"; then
-            echo "::error::BLAD 6 nie naprawiony: docker-compose.yml montuje /var/run/docker.sock — usuń tę linię"
-            exit 1
-          fi
-          echo "OK: Brak podmontowania gniazda Docker w docker-compose.yml"
-
       - name: Check .env not committed to repository
         run: |
           echo "--- Sprawdzam czy plik .env nie jest w repozytorium ---"
@@ -237,7 +206,7 @@ jobs:
       - name: Security summary
         run: |
           echo "========================================"
-          echo "Wszystkie 6 problemów bezpieczeństwa zostało naprawionych!"
+          echo "Wszystkie 4 problemy bezpieczeństwa zostały naprawione!"
           echo "Folder studenta: ${{ steps.find-app.outputs.app }}"
           echo "========================================"
 

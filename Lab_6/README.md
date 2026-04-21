@@ -103,7 +103,7 @@ curl -X POST http://localhost:5000/calculate \
 docker stop kalkulator-test && docker rm kalkulator-test
 ```
 
-Oczekiwana odpowiedź: `{"result": 15.0}`
+Oczekiwana odpowiedź: `{"result": 15}` (operacje +, -, * zwracają liczbę całkowitą; dzielenie zwraca float, np. `{"result": 5.0}`)
 
 ### 5 Optymalizacja 1 — kolejność warstw (cache)
 
@@ -111,7 +111,7 @@ Otwórz `Dockerfile` i przeanalizuj kolejność instrukcji.
 
 - 5.1 Zidentyfikuj problem: `COPY . .` stoi przed `pip install`. Oznacza to, że **każda zmiana w kodzie** (nawet jednej linii `app.py`) powoduje ponowne instalowanie wszystkich pakietów.
 
-- 5.2 Napraw kolejność warstw — najpierw skopiuj plik z zależnościami, zainstaluj pakiety, dopiero potem skopiuj kod aplikacji:
+- 5.2 Napraw kolejność warstw i dodaj flagę `--no-cache-dir` (usuwa cache pip z warstwy, zmniejsza rozmiar obrazu). Najpierw skopiuj plik z zależnościami, zainstaluj pakiety, dopiero potem skopiuj kod aplikacji:
 
 ```dockerfile
 COPY requirements.txt .
@@ -119,13 +119,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 ```
 
-- 5.3 Zbuduj obraz dwa razy pod rząd. Następnie wprowadź drobną zmianę w `app.py` (np. dodaj komentarz) i zbuduj po raz trzeci. Obserwuj, które warstwy są oznaczone jako `CACHED`.
+- 5.3 Przetestuj działanie cache w trzech krokach:
+  1. Usuń stary obraz i zbuduj nowy: `docker rmi kalkulator-baseline && docker build -t kalkulator-cache .`
+  2. Zbuduj ponownie bez zmian: `docker build -t kalkulator-cache .` — warstwa `pip install` powinna być `CACHED`
+  3. Wprowadź drobną zmianę w `app.py` (np. dodaj spację) i zbuduj ponownie — `pip install` nadal `CACHED`, tylko `COPY app.py` jest przebudowane
 
 - 5.4 Zapisz obserwacje w sprawozdaniu: jak zmieniło się zachowanie cache po naprawieniu kolejności?
 
 ### 6 Optymalizacja 2 — .dockerignore
 
 Bez pliku `.dockerignore` Docker wysyła **cały katalog** jako kontekst budowania — włącznie z `__pycache__/`, plikami testów, folderami wirtualnych środowisk itp. Rozmiar kontekstu widoczny jest w pierwszej linii outputu `docker build`.
+
+W tym projekcie kontekst jest mały (kilka KB), więc różnica liczbowa będzie niewielka. W realnych projektach z folderem `.git/`, `node_modules/` lub dużymi plikami danych redukcja kontekstu może wynosić setki MB — a mniejszy kontekst to szybszy build i mniejsze ryzyko przypadkowego skopiowania sekretów do obrazu.
 
 - 6.1 Sprawdzić aktualny rozmiar kontekstu budowania i zapisać go w sprawozdaniu.
 
@@ -176,7 +181,7 @@ curl -X POST http://localhost:5000/calculate \
 docker stop kalkulator-slim && docker rm kalkulator-slim
 ```
 
-Oczekiwana odpowiedź: `{"result": 42.0}`
+Oczekiwana odpowiedź: `{"result": 42}`
 
 - 7.4 (Opcjonalnie) Spróbować `python:3.11-alpine` i sprawdzić czy aplikacja się buduje. Wkleić wynik do sprawozdania.
 
@@ -202,6 +207,8 @@ ENV PATH=/root/.local/bin:$PATH
 EXPOSE 5000
 CMD ["python", "app.py"]
 ```
+
+Flaga `--user` w `pip install` powoduje że pakiety trafiają do `/root/.local` zamiast do systemowego `/usr/lib/python3`. Dzięki temu w drugim stage wystarczy skopiować jeden folder (`COPY --from=builder /root/.local`) zamiast przenosić całe środowisko systemowe.
 
 - 8.2 Zbudować finalny obraz i zmierzyć rozmiar
 

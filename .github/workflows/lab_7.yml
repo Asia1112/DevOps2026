@@ -1,0 +1,166 @@
+name: lab_7_github_actions
+
+on:
+  pull_request:
+    branches:
+      - TEST
+      - main
+    paths:
+      - 'Lab_7/app_*/**'
+
+jobs:
+  validate-tests:
+    name: Weryfikacja testów kalkulatora
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find student app directory
+        id: find-app
+        run: |
+          app=$(find Lab_7 -maxdepth 1 -type d -name 'app_[0-9]*' ! -name 'app_0000' | sort | head -1)
+          if [ -z "$app" ]; then
+            echo "::error::Nie znaleziono folderu app_NNNNN — utwórz folder z numerem indeksu (np. app_123456)"
+            exit 1
+          fi
+          echo "app=$app" >> $GITHUB_OUTPUT
+          echo "Znaleziono folder studenta: $app"
+
+      - name: Check calculator.py exists
+        run: |
+          if [ ! -f "${{ steps.find-app.outputs.app }}/calculator.py" ]; then
+            echo "::error::Brak pliku calculator.py w ${{ steps.find-app.outputs.app }}"
+            exit 1
+          fi
+          echo "OK: calculator.py istnieje"
+
+      - name: Check test_calculator.py exists
+        run: |
+          if [ ! -f "${{ steps.find-app.outputs.app }}/test_calculator.py" ]; then
+            echo "::error::Brak pliku test_calculator.py w ${{ steps.find-app.outputs.app }} — napisz testy z pomocą AI zgodnie z krokiem 5 instrukcji"
+            exit 1
+          fi
+          echo "OK: test_calculator.py istnieje"
+
+      - name: Check requirements.txt exists
+        run: |
+          if [ ! -f "${{ steps.find-app.outputs.app }}/requirements.txt" ]; then
+            echo "::error::Brak pliku requirements.txt w ${{ steps.find-app.outputs.app }}"
+            exit 1
+          fi
+          echo "OK: requirements.txt istnieje"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r "${{ steps.find-app.outputs.app }}/requirements.txt"
+
+      - name: Start calculator server
+        run: |
+          python "${{ steps.find-app.outputs.app }}/calculator.py" &
+          echo "Czekam na uruchomienie serwera..."
+          for i in {1..30}; do
+            if curl -fsS http://localhost:5000/health > /dev/null 2>&1; then
+              echo "Serwer gotowy po $i sekundach"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "::error::Serwer kalkulatora nie uruchomił się w ciągu 30 sekund"
+              exit 1
+            fi
+            sleep 1
+          done
+
+      - name: Run student tests
+        run: |
+          cd "${{ steps.find-app.outputs.app }}"
+          python -m pytest test_calculator.py -v
+
+      - name: Verify /add endpoint
+        run: |
+          response=$(curl -fsS -X POST http://localhost:5000/add \
+            -H "Content-Type: application/json" \
+            -d '{"a": 10, "b": 5}')
+          echo "POST /add (10+5): $response"
+          result=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'])")
+          if [ "$result" != "15" ] && [ "$result" != "15.0" ]; then
+            echo "::error::Oczekiwano 15, otrzymano $result"
+            exit 1
+          fi
+          echo "OK: 10 + 5 = $result"
+
+      - name: Verify /subtract endpoint
+        run: |
+          response=$(curl -fsS -X POST http://localhost:5000/subtract \
+            -H "Content-Type: application/json" \
+            -d '{"a": 20, "b": 8}')
+          echo "POST /subtract (20-8): $response"
+          result=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'])")
+          if [ "$result" != "12" ] && [ "$result" != "12.0" ]; then
+            echo "::error::Oczekiwano 12, otrzymano $result"
+            exit 1
+          fi
+          echo "OK: 20 - 8 = $result"
+
+      - name: Verify /multiply endpoint
+        run: |
+          response=$(curl -fsS -X POST http://localhost:5000/multiply \
+            -H "Content-Type: application/json" \
+            -d '{"a": 7, "b": 6}')
+          echo "POST /multiply (7*6): $response"
+          result=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'])")
+          if [ "$result" != "42" ] && [ "$result" != "42.0" ]; then
+            echo "::error::Oczekiwano 42, otrzymano $result"
+            exit 1
+          fi
+          echo "OK: 7 * 6 = $result"
+
+      - name: Verify /divide endpoint
+        run: |
+          response=$(curl -fsS -X POST http://localhost:5000/divide \
+            -H "Content-Type: application/json" \
+            -d '{"a": 15, "b": 3}')
+          echo "POST /divide (15/3): $response"
+          result=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'])")
+          if [ "$result" != "5" ] && [ "$result" != "5.0" ]; then
+            echo "::error::Oczekiwano 5, otrzymano $result"
+            exit 1
+          fi
+          echo "OK: 15 / 3 = $result"
+
+      - name: Verify /divide by zero returns HTTP 400
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/divide \
+            -H "Content-Type: application/json" \
+            -d '{"a": 5, "b": 0}')
+          echo "POST /divide (5/0): HTTP $status"
+          if [ "$status" != "400" ]; then
+            echo "::error::Dzielenie przez zero powinno zwracać HTTP 400, otrzymano HTTP $status"
+            exit 1
+          fi
+          echo "OK: Dzielenie przez zero zwraca HTTP 400"
+
+      - name: Check report exists
+        run: |
+          app="${{ steps.find-app.outputs.app }}"
+          echo "--- Sprawdzam sprawozdanie ---"
+          if find "$app" -maxdepth 1 -name "*.md" ! -name "README.md" | grep -q .; then
+            report=$(find "$app" -maxdepth 1 -name "*.md" ! -name "README.md" | head -1)
+            echo "OK: Znaleziono sprawozdanie: $report"
+          else
+            echo "::warning::Nie znaleziono pliku sprawozdania (*.md) w $app"
+          fi
+
+      - name: Summary
+        run: |
+          echo "========================================"
+          echo "Wszystkie testy kalkulatora przeszły pomyślnie!"
+          echo "Folder studenta: ${{ steps.find-app.outputs.app }}"
+          echo "========================================"

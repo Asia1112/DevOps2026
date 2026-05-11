@@ -27,8 +27,17 @@ runs:
       shell: bash
       run: |
         python UZUPELNIJ/app.py &  # <- TODO: wstaw wyrazenie ${{ inputs.XXX }} dla sciezki
-        # TODO: zastap te linie petla health-check sprawdzajaca /health co sekunde (max 30 prob)
-        sleep 2
+        for i in $(seq 1 30); do
+          if curl -fsS http://localhost:5000/health > /dev/null 2>&1; then
+            echo "Serwer gotowy po ${i}s"
+            break
+          fi
+          if [ "$i" -eq 30 ]; then
+            echo "::error::Serwer nie uruchomil sie w ciagu 30 sekund"
+            exit 1
+          fi
+          sleep 1
+        done
 
     - name: Run tests
       # <- TODO: dodaj wymagane pole shell: dla tego kroku (composite actions wymagaja jawnego shella)

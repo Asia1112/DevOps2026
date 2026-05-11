@@ -92,7 +92,6 @@ git pull
 
 ```bash
 git switch -c lab_9/new_branch_nrIndeksu
-git push -u origin lab_9/new_branch_nrIndeksu
 ```
 
 ### 3 Przygotowanie srodowiska pracy
@@ -164,31 +163,23 @@ Wszystkie testy powinny przejsc (zielone). Jesli nie — sprawdz czy aplikacja j
 
 **Sprawdz:** wszystkie testy zakonczone `PASSED` w wyniku `pytest`.
 
-### 5 Analiza naiwnego workflow
+### 5 Analiza naiwnego workflow (cwiczenie — nie wymagane przez grading)
 
 - 5.1 Otworzyc plik `ci-naive.yml` w swoim folderze i przeczytac jego zawartosc.
 
 - 5.2 Policzyc ile razy powtarza sie identyczny blok krokow (checkout, setup-python, pip install, start server, pytest, stop server).
 
-- 5.3 Skopiowac plik do katalogu `.github/workflows/` z unikalna nazwa i zaktualizowac branch w triggerze:
+Ten krok sluzy zrozumieniu problemu DRY — nie musisz commitowac naiwnego workflow. Jesli chcesz zobaczyc go w akcji na GitHubie, mozesz go skopiowac i uruchomic:
 
 ```bash
 cp Lab_9/app_nrIndeksu/ci-naive.yml .github/workflows/lab_9_naive_nrIndeksu.yml
+# Nastepnie edytuj plik — zmien 'nrIndeksu' na swoj numer we wszystkich miejscach
+git add .github/workflows/lab_9_naive_nrIndeksu.yml
+git commit -m "lab_9: naiwny workflow (cwiczenie)"
+git push -u origin lab_9/new_branch_nrIndeksu
 ```
 
-Nastepnie edytuj `.github/workflows/lab_9_naive_nrIndeksu.yml` — zmien:
-- `lab_9/new_branch_nrIndeksu` na swoj branch (`lab_9/new_branch_TWOJNUMER`)
-- wszystkie wystapienia `app_nrIndeksu` na `app_TWOJNUMER`
-
-- 5.4 Wypchnac zmiany i zweryfikowac, ze naiwny workflow uruchamia sie i przechodzi (trzy joby: Python 3.9, 3.10, 3.11):
-
-```bash
-git add Lab_9/app_nrIndeksu/ .github/workflows/lab_9_naive_nrIndeksu.yml
-git commit -m "lab_9: dodano app i naiwny workflow"
-git push
-```
-
-**Sprawdz:** w zakladce **Actions** na GitHub — trzy zielone joby w workflow `CI (naive)`.
+**Sprawdz (opcjonalnie):** w zakladce **Actions** na GitHub — trzy joby w workflow `CI (naive)` dla Pythona 3.9, 3.10 i 3.11.
 
 ### 6 Stworzenie composite action
 
@@ -206,7 +197,14 @@ cp Lab_9/app_nrIndeksu/action.yml.scaffold .github/actions/test-python-env-nrInd
 
 - 6.3 Uzupelnic plik `.github/actions/test-python-env-nrIndeksu/action.yml`.
 
-Wklej zawartosc pliku `action.yml.scaffold` oraz dokumentacje GitHub Actions (link powyzej) do LLM i poproś o uzupelnienie wszystkich miejsc oznaczonych `# <- TODO`. Przeanalizuj wynik — upewnij sie ze rozumiesz kazda zmiane zanim ja zaakceptujesz.
+Otworz plik i zastap wszystkie miejsca oznaczone `UZUPELNIJ` poprawnymi wyrazeniami. Masz dwa inputy zdefiniowane w sekcji `inputs:` — `python-version` i `app-path`. Odwoluj sie do nich przez `${{ inputs.python-version }}` i `${{ inputs.app-path }}`.
+
+Konkretnie:
+- `${{ inputs.UZUPELNIJ }}` przy `python-version:` → zastap `UZUPELNIJ` na `python-version`
+- `UZUPELNIJ/requirements.txt` → zastap `UZUPELNIJ` na `${{ inputs.app-path }}`
+- `python UZUPELNIJ/app.py &` → zastap `UZUPELNIJ` na `${{ inputs.app-path }}`
+- `python -m pytest UZUPELNIJ/test_app.py -v` → zastap `UZUPELNIJ` na `${{ inputs.app-path }}`
+- Dodaj `shell: bash` do kroku "Run tests" (jedyny krok `run:` bez tego pola)
 
 - 6.4 Sprawdzic plik akcji lokalnie — przejsc po nim i upewnic sie, ze nie ma niezastapionego placeholdera:
 

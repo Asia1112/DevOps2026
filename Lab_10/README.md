@@ -98,7 +98,7 @@ git push -u origin lab10/nrIndeksu
 - 1.6 Wygeneruj klucz SSH dla tej VM (lub uzyj istniejacego):
 
 ```bash
-ssh-keygen -t ed25519 -C "devops-lab10" -f ~/.ssh/id_lab10 -N ""
+ssh-keygen -t rsa -b 4096 -C "devops-lab10" -f ~/.ssh/id_lab10 -N ""
 cat ~/.ssh/id_lab10.pub   # skopiuj te wartosc — bedzie potrzebna w nastepnym kroku
 ```
 

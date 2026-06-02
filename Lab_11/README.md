@@ -3,7 +3,7 @@
 
 ## CEL LABORATORIUM
 
-Celem laboratorium jest praktyczne poznanie Kubernetes (K8s) jako platformy do uruchamiania konteneryzowanych aplikacji w chmurze. Student wdrozyl juz infrastrukture Terraform w Azure (Lab 10) — teraz Terraform posluzy rowniez do zarzadzania zasobami wewnatrz klastra Kubernetes. Zadaniem jest uzupelnienie gotowej konfiguracji Terraform, wdrozenie aplikacji na klaster AKS, zademonstrowanie mechanizmu self-healing (automatyczne odtwarzanie podow) oraz reaktywnego skalowania przez HPA (Horizontal Pod Autoscaler).
+Celem laboratorium jest praktyczne poznanie Kubernetes (K8s) jako platformy do uruchamiania konteneryzowanych aplikacji w chmurze. Mamy juz infrastrukture Terraform w Azure (Lab 10) — teraz Terraform posluzy rowniez do zarzadzania zasobami wewnatrz klastra Kubernetes. Zadaniem jest uzupelnienie gotowej konfiguracji Terraform, wdrozenie aplikacji na klaster AKS, zademonstrowanie mechanizmu self-healing (automatyczne odtwarzanie podow) oraz reaktywnego skalowania przez HPA (Horizontal Pod Autoscaler).
 
 
 ## WSTEP TEORETYCZNY

@@ -58,7 +58,7 @@ jobs:
           echo "Srodowisko GHA: ${INDEX}"
 
   # ----------------------------------------------------------------
-  # Job 1: walidacja skladni HCL — bez dostepu do Azure
+  # Job 1: walidacja skladni i brak TODO — bez dostepu do Azure
   # ----------------------------------------------------------------
   terraform-validate:
     name: Validate

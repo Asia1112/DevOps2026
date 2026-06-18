@@ -15,6 +15,7 @@ permissions:
 jobs:
   ci-cd:
     runs-on: ubuntu-latest
+    environment: 422971
 
     steps:
       - name: Checkout repository
@@ -38,9 +39,9 @@ jobs:
       - name: Login to Azure using OIDC
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID_422971 }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID_422971 }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_422971 }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Login to ACR
         run: |

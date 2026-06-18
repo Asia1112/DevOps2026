@@ -7,7 +7,7 @@ terraform {
       version = "~> 3.90"
     }
   }
-
+ 
   backend "azurerm" {
     resource_group_name  = "rg-tfstate-422971"
     storage_account_name = "stlab05tf422971"
